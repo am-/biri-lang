@@ -1,0 +1,50 @@
+
+/
+GET
+  out <- answer 42
+
+/ping
+GET
+  out <- ping
+
+/greet
+POST
+  out <- reply #name
+
+/hello/<String>
+GET
+  out <- reverse $1
+
+/hello/world
+GET
+  out <- reply "Hello World!"
+
+/<Int>
+GET
+  out <- find $1
+
+data Bool
+  True
+  False
+
+data List a
+  Nil
+  Cons a (List a)
+
+foo : {?name : String, ?age : Int, !out : String}
+  undefined
+
+bar : String
+  undefined
+
+repeat (n : Int) (c : {?in : a, !out : a}) : {?in : a, !out : a}
+  undefined
+
+map (f : a -> b) : List a -> List b
+  \list -> case list of
+      Nil       -> Nil
+      Cons x xs -> Cons (f x) (map f xs)
+
+reverse : String -> String
+  \str -> undefined
+
