@@ -16,8 +16,18 @@ executable biri
   main-is:             Biri/Cli.hs
   other-modules:       Biri.Language.Parser
   build-depends:       base >=4.5, containers >=0.5 && <0.6, vector >=0.10 && <0.11, filepath >=1.3 && <1.4, array >=0.4 && <0.5,
-                       template-haskell, process, directory, text, bytestring, attoparsec,
+                       template-haskell, directory, text, bytestring, attoparsec,
                        optparse-applicative >= 0.11
   hs-source-dirs:      src
   build-tools:         happy
+  default-language:    Haskell2010
+
+Test-Suite unit-tests
+  type:                exitcode-stdio-1.0
+  main-is:             Main.hs
+  hs-source-dirs:      tests
+  build-depends:       base >= 4.5,
+                       test-framework,
+                       test-framework-hunit,
+                       HUnit
   default-language:    Haskell2010
