@@ -45,7 +45,6 @@ compile (Cli { output = output, target = target, input = files, retain = retain 
       Just (resources,_,_) | all null resources -> putStrLn "Nothing to do."
       Just (resources, datas, functions) -> case target of
          Scgi -> do
-             print $ resources
              putStr $ "Generate routes... "
              T.writeFile "routes.c" $ Routes.generate (concat resources)
              putStrLn "Done!"
