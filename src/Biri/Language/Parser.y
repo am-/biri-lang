@@ -113,14 +113,37 @@ Data : data constructor Variables indent TypeConstructors dedent { Data $2 $3 $5
 TypeConstructors : constructor Types                          { [TypeConstructor $1 $2] }
                  | constructor Types newline TypeConstructors { TypeConstructor $1 $2 : $4 }
 
-
-Expr : '\\' Lambda                      { $2 }
-     | case Expr of indent Cases dedent { Case $2 $5 }
-     | Expression                       { $1 }
-     | Expression Expressions           { foldl Application (Application $1 (head $2)) (tail $2) }
+Expr
+  : '\\' Lambda                  { TypedExpr $2 Nothing }
+  | '(' '\\' Lambda ')' ':' Type { TypedExpr $3 (Just $6) }
+  | Expression                   { $1 }
 
 Lambda : ident '->' Expr { Lambda $1 $3 }
-       | ident Lambda    { Lambda $1 $2 }
+       | ident Lambda    { Lambda $1 (TypedExpr $2 Nothing) }
+
+Expression
+  : Application          { TypedExpr $1 Nothing }
+  | Application ':' Type { TypedExpr $1 (Just $3) }
+  | Value                { $1 }
+
+Application
+  : Application Value { Application (TypedExpr $1 Nothing) $2 }
+
+Value
+  : UntypedExpression          { TypedExpr $1 Nothing }
+  | UntypedExpression ':' Type { TypedExpr $1 (Just $3) }
+  | '(' Expr ')'               { $2 }
+
+UntypedExpression
+  : case Expr of indent Cases dedent { Case $2 $5 }
+  | constructor                      { DataConstructor $1 }
+  | ident                            { Variable $1 }
+  | '$' int                          { Match $2 }
+  | '?' ident                        { Query $2 }
+  | '#' ident                        { Form $2 }
+  | string                           { Constant (LString $1) }
+  | int                              { Constant (LInt $1) }
+  | double                           { Constant (LDouble $1) }
 
 Cases : Pattern '->' Expr               { [($1, $3)] }
       | Pattern '->' Expr newline Cases { ($1, $3) : $5 }
@@ -132,20 +155,6 @@ Pattern : constructor Patterns { ConstructorPattern $1 $2 }
         | ident                { VariablePattern $1 }
         | wildcard             { WildcardPattern }
         | '(' Pattern ')'      { $2 }
-
-Expressions : Expression             { [$1] }
-            | Expression Expressions { $1 : $2 }
-
-Expression : ident                   { Variable $1 }
-           | '$' int                 { Match $2 }
-           | '?' ident               { Query $2 }
-           | '#' ident               { Form $2 }
-           | constructor             { DataConstructor $1 [] }
-           | constructor Expressions { DataConstructor $1 $2 }
-           | string                  { Constant (LString $1) }
-           | int                     { Constant (LInt $1) }
-           | double                  { Constant (LDouble $1) }
-           | '(' Expr ')'            { $2 }
 
 Types : {- empty -}        { [] }
       | constructor Types  { TypeConstructor $1 [] : $2 }

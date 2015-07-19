@@ -11,6 +11,7 @@ module Biri.Language.AbstractSyntax
 , Parameter(..)
 , Instruction(..)
 , Data(..)
+, TypedExpr(..)
 , Expr(..)
 , Pattern(..)
 , Type(..)
@@ -42,7 +43,7 @@ data Segment = Fixed Text
 newtype URI = URI [Segment]
             deriving (Show, Eq, Ord)
 
-data Computation = Function Identifier Signature Expr
+data Computation = Function Identifier Signature TypedExpr
                  | Component Identifier Signature [Instruction]
                  deriving (Show, Eq, Ord)
 
@@ -52,19 +53,22 @@ data Signature = Signature [Parameter] Type
 data Parameter = Parameter Identifier Type
                deriving (Show, Eq, Ord)
 
-data Instruction = IfElse Expr [Instruction] [Instruction]
-                 | If Expr [Instruction]
+data Instruction = IfElse TypedExpr [Instruction] [Instruction]
+                 | If TypedExpr [Instruction]
                  | Load Identifier Identifier
-                 | Store Identifier Expr
+                 | Store Identifier TypedExpr
                  deriving (Show, Eq, Ord)
 
 data Data = Data Constructor [Identifier] [Type]
           deriving (Show, Eq, Ord)
 
-data Expr = Case Expr [(Pattern, Expr)]
-          | Application Expr Expr
-          | Lambda Identifier Expr
-          | DataConstructor Constructor [Expr]
+data TypedExpr = TypedExpr Expr (Maybe Type)
+               deriving (Show, Eq, Ord)
+
+data Expr = Case TypedExpr [(Pattern, TypedExpr)]
+          | Application TypedExpr TypedExpr
+          | Lambda Identifier TypedExpr
+          | DataConstructor Constructor
           | Variable Identifier
           | Match Int
           | Query Identifier
