@@ -21,7 +21,7 @@ tokenize :: Text -> [((Int, Int), Token)]
 tokenize = either error transform . parseOnly (many1 matchToken)
 
 transform :: [Token] -> [((Int, Int), Token)]
-transform = clean . concat . filter ((/= TNewline) . snd . head)
+transform = clean . finalize 0 . concat . filter ((/= TNewline) . snd . head)
           . indent [1] . toLines
           . filter (not . isHorizontalSpace . snd) . annotate 1 1
   where
@@ -33,7 +33,20 @@ transform = clean . concat . filter ((/= TNewline) . snd . head)
         t@(_, TIndent) : (_, TNewline) : tokens -> t : clean tokens
         t@(_, TDedent) : (_, TNewline) : tokens -> t : clean tokens
         token : tokens                          -> token : clean tokens
-    
+     
+    finalize :: Int -> [((Int, Int), Token)] -> [((Int, Int), Token)]
+    finalize n tokens = case tokens of
+        [] -> error "Biri.Language.Lexer.transform: empty token list"
+        [t@(position, token)] -> (t:) . (++ [(position, TEof)]) $ case token of
+            TIndent -> replicate (n + 1) (position, TDedent)
+            TDedent -> replicate (n - 1) (position, TDedent)
+            _       -> replicate n (position, TDedent)
+        t@(_, token):rest -> (t:) . flip finalize rest $ case token of
+            TIndent -> n + 1
+            TDedent -> n - 1
+            _       -> n    
+
+
     isHorizontalSpace :: Token -> Bool
     isHorizontalSpace token = case token of
         THorizontalSpace _ -> True
@@ -95,6 +108,7 @@ transform = clean . concat . filter ((/= TNewline) . snd . head)
         TIndent -> (0,4)
         TDedent -> (0,4)
         TNewline -> (1,1)
+        TEof -> (0,0)
         THorizontalSpace n -> (0, n)
         TWildcard n -> (0, 1 + n)
         TIdent (Identifier t) -> (0, T.length t)
@@ -143,6 +157,7 @@ data Token
     | TIndent
     | TDedent
     | TNewline
+    | TEof
     | THorizontalSpace Int
     | TWildcard Int
     | TIdent Identifier
