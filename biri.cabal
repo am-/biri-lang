@@ -15,9 +15,9 @@ cabal-version:       >=1.10
 executable biri
   main-is:             Biri/Cli.hs
   other-modules:       Biri.Language.Parser
-  build-depends:       base >=4.5, containers >=0.5 && <0.6, vector >=0.10 && <0.11, filepath >=1.3 && <1.4, array >=0.4 && <0.5,
+  build-depends:       base >=4.7, containers, vector, filepath, array,
                        template-haskell, process >= 1.2, directory, text, bytestring, attoparsec,
-                       optparse-applicative >= 0.11
+                       optparse-applicative
   hs-source-dirs:      src
   build-tools:         happy
   default-language:    Haskell2010
@@ -25,9 +25,11 @@ executable biri
 Test-Suite unit-tests
   type:                exitcode-stdio-1.0
   main-is:             Main.hs
-  hs-source-dirs:      tests
-  build-depends:       base >= 4.5,
+  other-modules:       Biri.Language, Biri.Language.Parser
+  hs-source-dirs:      tests, src
+  build-depends:       base >= 4.7,
                        test-framework,
                        test-framework-hunit,
-                       HUnit
+                       HUnit,
+                       array, text, attoparsec
   default-language:    Haskell2010
