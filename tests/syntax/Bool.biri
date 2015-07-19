@@ -1,0 +1,27 @@
+
+data Bool
+  False
+  True
+
+not (b : Bool) : Bool
+  case b of
+    False -> True
+    True -> False
+
+convolute (b : Bool) : Bool
+  not (not b)
+
+and (b : Bool) : Bool -> Bool
+  case b of
+    False -> \x -> False
+    True -> \x -> x
+
+or (b : Bool) : Bool -> Bool
+  \x -> case b of
+    False -> x
+    True  -> True
+
+bool (x : a) (y : a) (b : Bool) : Bool
+  case b of
+    False -> y
+    True  -> x
