@@ -19,6 +19,7 @@ import Biri.Language.Lexer
     indent      { (_, TIndent) }
     dedent      { (_, TDedent) }
     newline     { (_, TNewline) }
+    eof         { (_, TEof) }
     int         { (_, TInt $$) }
     double      { (_, TDouble $$) }
     string      { (_, TString $$) }
@@ -61,12 +62,10 @@ import Biri.Language.Lexer
 %% 
 
 Program
-  : Resource             { Program [$1] [] [] }
-  | Resource Program     { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
-  | Data                 { Program [] [$1] [] }
+  : Resource Program     { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
   | Data Program         { let Program rs ds fns = $2 in Program rs ($1:ds) fns }
-  | Computation          { Program [] [] [$1] }
   | Computation Program  { let Program rs ds fns = $2 in Program rs ds ($1:fns) }
+  | eof                  { Program [] [] [] }
 
 Resource
   : URI newline Handlers { Resource $1 $3 }
@@ -130,37 +129,19 @@ TypeConstructors
   | constructor Types newline TypeConstructors { TypeConstructor $1 $2 : $4 }
 
 Expr
+  : Abstraction { $1 }
+
+Abstraction
   : '\\' Lambda                  { TypedExpr $2 Nothing }
-  | '(' '\\' Lambda ')' ':' Type { TypedExpr $3 (Just $6) }
-  | Expression                   { $1 }
+  | Case                         { $1 }
 
 Lambda
   : ident '->' Expr { Lambda $1 $3 }
   | ident Lambda    { Lambda $1 (TypedExpr $2 Nothing) }
 
-Expression
-  : Application          { TypedExpr $1 Nothing }
-  | Application ':' Type { TypedExpr $1 (Just $3) }
-  | Value                { $1 }
-
-Application
-  : Application Value { Application (TypedExpr $1 Nothing) $2 }
-
-Value
-  : UntypedExpression          { TypedExpr $1 Nothing }
-  | UntypedExpression ':' Type { TypedExpr $1 (Just $3) }
-  | '(' Expr ')'               { $2 }
-
-UntypedExpression
-  : case Expr of indent Cases dedent { Case $2 $5 }
-  | constructor                      { DataConstructor $1 }
-  | ident                            { Variable $1 }
-  | '$' int                          { Match $2 }
-  | '?' ident                        { Query $2 }
-  | '#' ident                        { Form $2 }
-  | string                           { Constant (LString $1) }
-  | int                              { Constant (LInt $1) }
-  | double                           { Constant (LDouble $1) }
+Case
+  : case Expr of indent Cases dedent                  { TypedExpr (Case $2 $5) Nothing }
+  | Application                                       { $1 }
 
 Cases
   : Pattern '->' Expr               { [($1, $3)] }
@@ -175,6 +156,25 @@ Pattern
   | ident                { VariablePattern $1 }
   | wildcard             { WildcardPattern }
   | '(' Pattern ')'      { $2 }
+
+Application
+  : Application Value          { TypedExpr (Application $1 $2) Nothing }
+  | Value                      { $1 }
+
+Value
+  : Atomic          { TypedExpr $1 Nothing }
+  | '(' Expr ')'    { $2 }
+
+Atomic
+  : constructor                      { DataConstructor $1 }
+  | ident                            { Variable $1 }
+  | '$' int                          { Match $2 }
+  | '?' ident                        { Query $2 }
+  | '#' ident                        { Form $2 }
+  | string                           { Constant (LString $1) }
+  | int                              { Constant (LInt $1) }
+  | double                           { Constant (LDouble $1) }
+
 
 Types
   : {- empty -}        { [] }
