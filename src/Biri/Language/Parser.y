@@ -60,66 +60,83 @@ import Biri.Language.Lexer
     '\\'        { (_, TBackslash) }
 %% 
 
-Program : Resource             { Program [$1] [] [] }
-        | Resource Program     { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
-        | Data                 { Program [] [$1] [] }
-        | Data Program         { let Program rs ds fns = $2 in Program rs ($1:ds) fns }
-        | Computation          { Program [] [] [$1] }
-        | Computation Program  { let Program rs ds fns = $2 in Program rs ds ($1:fns) }
+Program
+  : Resource             { Program [$1] [] [] }
+  | Resource Program     { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
+  | Data                 { Program [] [$1] [] }
+  | Data Program         { let Program rs ds fns = $2 in Program rs ($1:ds) fns }
+  | Computation          { Program [] [] [$1] }
+  | Computation Program  { let Program rs ds fns = $2 in Program rs ds ($1:fns) }
 
-Resource : URI newline Handlers { Resource $1 $3 }
+Resource
+  : URI newline Handlers { Resource $1 $3 }
 
-URI : Segments { URI $1 }
+URI
+  : Segments { URI $1 }
 
-Segments : seg_eps          { [] }
-         | segment          { [Fixed $1] }
-         | segment Segments { Fixed $1 : $2 }
-         | pattern          { [Pattern $1] }
-         | pattern Segments { Pattern $1 : $2 }
+Segments
+  : seg_eps          { [] }
+  | segment          { [Fixed $1] }
+  | segment Segments { Fixed $1 : $2 }
+  | pattern          { [Pattern $1] }
+  | pattern Segments { Pattern $1 : $2 }
 
-Handlers : Handler          { [$1] }
-         | Handler Handlers { $1:$2 }
+Handlers
+  : Handler          { [$1] }
+  | Handler Handlers { $1:$2 }
 
-Handler : Method indent Instructions dedent  { Handler $1 $3 }
+Handler
+  : Method indent Instructions dedent  { Handler $1 $3 }
 
-Method : delete { Delete }
-       | get    { Get }
-       | post   { Post }
-       | put    { Put }
+Method
+  : delete { Delete }
+  | get    { Get }
+  | post   { Post }
+  | put    { Put }
 
-Computation : ident Signature indent Instructions dedent { Component $1 $2 $4 }
-            | ident Signature indent Expr dedent         { Function $1 $2 $4 }
+Computation
+  : ident Signature indent Instructions dedent { Component $1 $2 $4 }
+  | ident Signature indent Expr dedent         { Function $1 $2 $4 }
 
-Signature : ParamList ':' Type { Signature $1 $3 }
+Signature
+  : ParamList ':' Type { Signature $1 $3 }
 
-ParamList :  {- empty -}            { [] }
-          | '(' Param ')' ParamList { $2 : $4 }
+ParamList
+  :  {- empty -}            { [] }
+  | '(' Param ')' ParamList { $2 : $4 }
 
-Param : ident ':' Type { Parameter $1 $3 }
+Param
+  : ident ':' Type { Parameter $1 $3 }
 
-Instructions : Instruction                      { [$1] }
-             | Instruction newline Instructions { $1 : $3 }
+Instructions
+  : Instruction                      { [$1] }
+  | Instruction newline Instructions { $1 : $3 }
 
-Instruction : if IfStatement   { $2 }
-            | ident '->' ident { Load $1 $3 }
-            | ident '<-' Expr  { Store $1 $3 }
+Instruction
+  : if IfStatement   { $2 }
+  | ident '->' ident { Load $1 $3 }
+  | ident '<-' Expr  { Store $1 $3 }
 
-IfStatement : Expr indent Instructions dedent                                 { If $1 $3 }
-            | Expr indent Instructions dedent else indent Instructions dedent { IfElse $1 $3 $7 }
-            | Expr indent Instructions dedent elif IfStatement                { IfElse $1 $3 [$6] }
+IfStatement
+  : Expr indent Instructions dedent                                 { If $1 $3 }
+  | Expr indent Instructions dedent else indent Instructions dedent { IfElse $1 $3 $7 }
+  | Expr indent Instructions dedent elif IfStatement                { IfElse $1 $3 [$6] }
 
-Data : data constructor Variables indent TypeConstructors dedent { Data $2 $3 $5 } 
+Data
+  : data constructor Variables indent TypeConstructors dedent { Data $2 $3 $5 } 
 
-TypeConstructors : constructor Types                          { [TypeConstructor $1 $2] }
-                 | constructor Types newline TypeConstructors { TypeConstructor $1 $2 : $4 }
+TypeConstructors
+  : constructor Types                          { [TypeConstructor $1 $2] }
+  | constructor Types newline TypeConstructors { TypeConstructor $1 $2 : $4 }
 
 Expr
   : '\\' Lambda                  { TypedExpr $2 Nothing }
   | '(' '\\' Lambda ')' ':' Type { TypedExpr $3 (Just $6) }
   | Expression                   { $1 }
 
-Lambda : ident '->' Expr { Lambda $1 $3 }
-       | ident Lambda    { Lambda $1 (TypedExpr $2 Nothing) }
+Lambda
+  : ident '->' Expr { Lambda $1 $3 }
+  | ident Lambda    { Lambda $1 (TypedExpr $2 Nothing) }
 
 Expression
   : Application          { TypedExpr $1 Nothing }
@@ -145,37 +162,45 @@ UntypedExpression
   | int                              { Constant (LInt $1) }
   | double                           { Constant (LDouble $1) }
 
-Cases : Pattern '->' Expr               { [($1, $3)] }
-      | Pattern '->' Expr newline Cases { ($1, $3) : $5 }
+Cases
+  : Pattern '->' Expr               { [($1, $3)] }
+  | Pattern '->' Expr newline Cases { ($1, $3) : $5 }
 
-Patterns : {- empty -}      { [] }
-         | Pattern Patterns { $1 : $2 }
+Patterns
+  : {- empty -}      { [] }
+  | Pattern Patterns { $1 : $2 }
 
-Pattern : constructor Patterns { ConstructorPattern $1 $2 }
-        | ident                { VariablePattern $1 }
-        | wildcard             { WildcardPattern }
-        | '(' Pattern ')'      { $2 }
+Pattern
+  : constructor Patterns { ConstructorPattern $1 $2 }
+  | ident                { VariablePattern $1 }
+  | wildcard             { WildcardPattern }
+  | '(' Pattern ')'      { $2 }
 
-Types : {- empty -}        { [] }
-      | constructor Types  { TypeConstructor $1 [] : $2 }
-      | ident Types        { TypeVariable $1 : $2 }
-      | '(' Type ')' Types { $2 : $4 }
+Types
+  : {- empty -}        { [] }
+  | constructor Types  { TypeConstructor $1 [] : $2 }
+  | ident Types        { TypeVariable $1 : $2 }
+  | '(' Type ')' Types { $2 : $4 }
 
-Type : Typ           { $1 }
-     | Type '->' Typ { FunctionArrow $1 $3 }
+Type
+  : Typ           { $1 }
+  | Type '->' Typ { FunctionArrow $1 $3 }
 
-Typ : constructor Types { TypeConstructor $1 $2 }
-    | ident             { TypeVariable $1 }
-    | '(' Type ')'      { $2 }
-    | '{' Interface '}' { uncurry ComponentType (partitionEithers $2) }
+Typ
+  : constructor Types { TypeConstructor $1 $2 }
+  | ident             { TypeVariable $1 }
+  | '(' Type ')'      { $2 }
+  | '{' Interface '}' { uncurry ComponentType (partitionEithers $2) }
 
-Interface : '?' Param               { [Left $2] }
-          | '!' Param               { [Right $2] }
-          | '?' Param ',' Interface { Left $2 : $4 }
-          | '!' Param ',' Interface { Right $2 : $4 }
+Interface
+  : '?' Param               { [Left $2] }
+  | '!' Param               { [Right $2] }
+  | '?' Param ',' Interface { Left $2 : $4 }
+  | '!' Param ',' Interface { Right $2 : $4 }
 
-Variables : {- empty -}     { [] }
-          | ident Variables { $1 : $2 }
+Variables
+  : {- empty -}     { [] }
+  | ident Variables { $1 : $2 }
 
 
 {
