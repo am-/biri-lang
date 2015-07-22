@@ -148,15 +148,23 @@ Cases
   : Pattern '->' Expr               { [($1, $3)] }
   | Pattern '->' Expr newline Cases { ($1, $3) : $5 }
 
-Patterns
-  : {- empty -}      { [] }
-  | Pattern Patterns { $1 : $2 }
-
 Pattern
-  : constructor Patterns { ConstructorPattern $1 $2 }
-  | ident                { VariablePattern $1 }
-  | wildcard             { WildcardPattern }
-  | '(' Pattern ')'      { $2 }
+  : ident              { VariablePattern $1 }
+  | wildcard           { WildcardPattern }
+  | ConstructorPattern { $1 }
+
+ConstructorPattern
+  : constructor             { ConstructorPattern $1 [] }
+  | constructor SubPatterns { ConstructorPattern $1 $2 }
+
+SubPatterns
+  : SubPatterns SubPattern { $1 ++ [$2] }
+  | SubPattern { [$1] }
+
+SubPattern 
+  : ident                      { VariablePattern $1 }
+  | wildcard                   { WildcardPattern }
+  | '(' ConstructorPattern ')' { $2 }
 
 Application
   : Application Value          { TypedExpr (Application $1 $2) Nothing }
