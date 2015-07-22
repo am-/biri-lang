@@ -12,6 +12,7 @@ module Biri.Language.AbstractSyntax
 , Instruction(..)
 , Data(..)
 , TypedExpr(..)
+, retype
 , Expr(..)
 , Pattern(..)
 , Type(..)
@@ -64,6 +65,9 @@ data Data = Data Constructor [Identifier] [Type]
 
 data TypedExpr = TypedExpr Expr (Maybe Type)
                deriving (Show, Eq, Ord)
+
+retype :: TypedExpr -> Type -> TypedExpr
+retype (TypedExpr e _) = TypedExpr e . Just
 
 data Expr = Case TypedExpr [(Pattern, TypedExpr)]
           | Application TypedExpr TypedExpr

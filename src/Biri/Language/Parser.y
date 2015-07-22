@@ -141,6 +141,7 @@ Lambda
 
 Case
   : case Expr of indent Cases dedent                  { TypedExpr (Case $2 $5) Nothing }
+  | case Expr of indent Cases dedent ':' Type         { TypedExpr (Case $2 $5) (Just $8) }
   | Application                                       { $1 }
 
 Cases
@@ -159,11 +160,13 @@ Pattern
 
 Application
   : Application Value          { TypedExpr (Application $1 $2) Nothing }
+  | Application Value ':' Type { TypedExpr (Application $1 $2) (Just $4) }
   | Value                      { $1 }
+  | Value ':' Type             { retype $1 $3 }
 
 Value
-  : Atomic          { TypedExpr $1 Nothing }
-  | '(' Expr ')'    { $2 }
+  : Atomic                { TypedExpr $1 Nothing }
+  | '(' Expr ')'          { $2 }
 
 Atomic
   : constructor                      { DataConstructor $1 }
