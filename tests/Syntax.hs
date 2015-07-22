@@ -20,11 +20,14 @@ tests = [ testCase "Bool" bool
         , testCase "Bool-annotated" boolAnnotated
         ]
 
-tycon :: Text -> [Type] -> Type
+tycon :: Text -> Type
 tycon = TypeConstructor . Constructor
 
 tyvar :: Text -> Type
 tyvar = TypeVariable . Identifier
+
+dacon :: Text -> [Type] -> (Constructor, [Type])
+dacon = (,) . Constructor
 
 var :: Text -> Expr
 var = Variable . Identifier
@@ -39,13 +42,13 @@ bool = do
             zipWithM_ (\(label, fn) -> assertEqual ("Definition of `" ++ label ++ "'") fn) fns functions
   where
     data_bool = Data (Constructor "Bool") []
-              [ tycon "False" []
-              , tycon "True" []
+              [ dacon "False" []
+              , dacon "True" []
               ]
     
     fn_not = Function
         (Identifier "not")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
         (flip TypedExpr Nothing (Case (TypedExpr (var "b") Nothing)
             [ (ConstructorPattern (Constructor "False") [], TypedExpr (DataConstructor (Constructor "True")) Nothing)
             , (ConstructorPattern (Constructor "True") [], TypedExpr (DataConstructor (Constructor "False")) Nothing)
@@ -55,7 +58,7 @@ bool = do
     
     fn_convolute = Function
         (Identifier "convolute")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
         (TypedExpr
             (Application
                 (TypedExpr (var "not") Nothing)
@@ -68,7 +71,7 @@ bool = do
     
     fn_and = Function
         (Identifier "and")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (FunctionArrow (tycon "Bool") (tycon "Bool")))
         (TypedExpr
             (Case
                 (TypedExpr (var "b") Nothing)
@@ -81,7 +84,7 @@ bool = do
 
     fn_or = Function
         (Identifier "or")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (FunctionArrow (tycon "Bool") (tycon "Bool")))
         (TypedExpr
             (Lambda
                 (Identifier "x")
@@ -100,7 +103,7 @@ bool = do
 
     fn_bool = Function
         (Identifier "bool")
-        (Signature [Parameter (Identifier "x") (tyvar "a"), Parameter (Identifier "y") (tyvar "a"), Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
+        (Signature [Parameter (Identifier "x") (tyvar "a"), Parameter (Identifier "y") (tyvar "a"), Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
         (TypedExpr
             (Case
                 (TypedExpr (var "b") Nothing)
@@ -121,41 +124,41 @@ boolAnnotated = do
             zipWithM_ (\(label, fn) -> assertEqual ("Definition of `" ++ label ++ "'") fn) fns functions
   where
     data_bool = Data (Constructor "Bool") []
-              [ tycon "False" []
-              , tycon "True" []
+              [ dacon "False" []
+              , dacon "True" []
               ]
     
     fn_not = Function
         (Identifier "not")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
-        (flip TypedExpr (Just $ tycon "Bool" []) (Case (TypedExpr (var "b") (Just $ tycon "Bool" []))
-            [ (ConstructorPattern (Constructor "False") [], TypedExpr (DataConstructor (Constructor "True")) (Just $ tycon "Bool" []))
-            , (ConstructorPattern (Constructor "True") [], TypedExpr (DataConstructor (Constructor "False")) (Just $ tycon "Bool" []))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
+        (flip TypedExpr (Just $ tycon "Bool") (Case (TypedExpr (var "b") (Just $ tycon "Bool"))
+            [ (ConstructorPattern (Constructor "False") [], TypedExpr (DataConstructor (Constructor "True")) (Just $ tycon "Bool"))
+            , (ConstructorPattern (Constructor "True") [], TypedExpr (DataConstructor (Constructor "False")) (Just $ tycon "Bool"))
             ]
             )
         )
     
     fn_convolute = Function
         (Identifier "convolute")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
         (TypedExpr
             (Application
                 (TypedExpr (var "not") Nothing)
                 (TypedExpr
                     (Application
-                        (TypedExpr (var "not") (Just $ FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
-                        (TypedExpr (var "b") (Just $ tycon "Bool" [])))
-                    (Just $ tycon "Bool" [])))
-            (Just $ tycon "Bool" []))
+                        (TypedExpr (var "not") (Just $ FunctionArrow (tycon "Bool") (tycon "Bool")))
+                        (TypedExpr (var "b") (Just $ tycon "Bool")))
+                    (Just $ tycon "Bool")))
+            (Just $ tycon "Bool"))
     
     fn_and = Function
         (Identifier "and")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (FunctionArrow (tycon "Bool") (tycon "Bool")))
         (TypedExpr
             (Case
                 (TypedExpr (var "b") Nothing)
-                [ (ConstructorPattern (Constructor "False") [], TypedExpr (Lambda (Identifier "x") (TypedExpr (DataConstructor (Constructor "False")) (Just $ tycon "Bool" []))) Nothing)
-                , (ConstructorPattern (Constructor "True") [], TypedExpr (Lambda (Identifier "x") (TypedExpr (var "x") Nothing)) (Just $ FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
+                [ (ConstructorPattern (Constructor "False") [], TypedExpr (Lambda (Identifier "x") (TypedExpr (DataConstructor (Constructor "False")) (Just $ tycon "Bool"))) Nothing)
+                , (ConstructorPattern (Constructor "True") [], TypedExpr (Lambda (Identifier "x") (TypedExpr (var "x") Nothing)) (Just $ FunctionArrow (tycon "Bool") (tycon "Bool")))
                 ]
             )
             Nothing
@@ -163,32 +166,32 @@ boolAnnotated = do
 
     fn_or = Function
         (Identifier "or")
-        (Signature [Parameter (Identifier "b") (tycon "Bool" [])] (FunctionArrow (tycon "Bool" []) (tycon "Bool" [])))
+        (Signature [Parameter (Identifier "b") (tycon "Bool")] (FunctionArrow (tycon "Bool") (tycon "Bool")))
         (TypedExpr
             (Lambda
                 (Identifier "x")
                 (TypedExpr
                     (Case
                         (TypedExpr (var "b") Nothing)
-                        [ (ConstructorPattern (Constructor "False") [], TypedExpr (var "x") (Just $ tycon "Bool" []))
-                        , (ConstructorPattern (Constructor "True") [], TypedExpr (DataConstructor (Constructor "True")) (Just $ tycon "Bool" []))
+                        [ (ConstructorPattern (Constructor "False") [], TypedExpr (var "x") (Just $ tycon "Bool"))
+                        , (ConstructorPattern (Constructor "True") [], TypedExpr (DataConstructor (Constructor "True")) (Just $ tycon "Bool"))
                         ]       
                     )
                     Nothing
                 )
             )
-            (Just $ FunctionArrow (tycon "Bool" []) (tycon "Bool" []))
+            (Just $ FunctionArrow (tycon "Bool") (tycon "Bool"))
         )
 
     fn_bool = Function
         (Identifier "bool")
-        (Signature [Parameter (Identifier "x") (tyvar "a"), Parameter (Identifier "y") (tyvar "a"), Parameter (Identifier "b") (tycon "Bool" [])] (tycon "Bool" []))
+        (Signature [Parameter (Identifier "x") (tyvar "a"), Parameter (Identifier "y") (tyvar "a"), Parameter (Identifier "b") (tycon "Bool")] (tycon "Bool"))
         (TypedExpr
             (Case
-                (TypedExpr (var "b") (Just $ tycon "Bool" []))
+                (TypedExpr (var "b") (Just $ tycon "Bool"))
                 [ (ConstructorPattern (Constructor "False") [], TypedExpr (var "y") (Just $ tyvar "a"))
                 , (ConstructorPattern (Constructor "True") [], TypedExpr (var "x") (Just $ tyvar "a"))
                 ]
             )
-            (Just $ tycon "Bool" [])
+            (Just $ tycon "Bool")
         )

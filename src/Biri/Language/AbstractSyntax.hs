@@ -60,7 +60,7 @@ data Instruction = IfElse TypedExpr [Instruction] [Instruction]
                  | Store Identifier TypedExpr
                  deriving (Show, Eq, Ord)
 
-data Data = Data Constructor [Identifier] [Type]
+data Data = Data Constructor [Identifier] [(Constructor, [Type])]
           deriving (Show, Eq, Ord)
 
 data TypedExpr = TypedExpr Expr (Maybe Type)
@@ -90,10 +90,11 @@ data Literal = LString Text
              | LDouble Double
              deriving (Show, Eq, Ord)
 
-data Type = TypeConstructor Constructor [Type]
-          | FunctionArrow Type Type
-          | TypeVariable Identifier
+data Type = TypeVariable Identifier
+          | TypeConstructor Constructor
           | ComponentType [Parameter] [Parameter]
+          | TypeApplication Type Type
+          | FunctionArrow Type Type
           deriving (Show, Eq, Ord)
 
 newtype Identifier = Identifier Text

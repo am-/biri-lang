@@ -122,11 +122,18 @@ IfStatement
   | Expr indent Instructions dedent elif IfStatement                { IfElse $1 $3 [$6] }
 
 Data
-  : data constructor Variables indent TypeConstructors dedent { Data $2 $3 $5 } 
+  : data constructor Variables indent DataConstructors dedent { Data $2 $3 $5 } 
 
-TypeConstructors
-  : constructor Types                          { [TypeConstructor $1 $2] }
-  | constructor Types newline TypeConstructors { TypeConstructor $1 $2 : $4 }
+DataConstructors
+  : DataConstructor                          { [$1] }
+  | DataConstructor newline DataConstructors { $1 : $3 }
+
+DataConstructor
+  : constructor TypeList                 { ($1, $2) }
+
+TypeList
+  : {- empty -}         { [] }
+  | TypeList AtomicType { $1 ++ [$2] }
 
 Expr
   : Abstraction { $1 }
@@ -186,19 +193,16 @@ Atomic
   | int                              { Constant (LInt $1) }
   | double                           { Constant (LDouble $1) }
 
-
-Types
-  : {- empty -}        { [] }
-  | constructor Types  { TypeConstructor $1 [] : $2 }
-  | ident Types        { TypeVariable $1 : $2 }
-  | '(' Type ')' Types { $2 : $4 }
-
 Type
-  : Typ           { $1 }
-  | Type '->' Typ { FunctionArrow $1 $3 }
+  : TypeApplication '->' Type { FunctionArrow $1 $3 }
+  | TypeApplication           { $1 }
 
-Typ
-  : constructor Types { TypeConstructor $1 $2 }
+TypeApplication
+  : TypeApplication AtomicType { TypeApplication $1 $2 }
+  | AtomicType                 { $1 }
+
+AtomicType
+  : constructor       { TypeConstructor $1 }
   | ident             { TypeVariable $1 }
   | '(' Type ')'      { $2 }
   | '{' Interface '}' { uncurry ComponentType (partitionEithers $2) }
