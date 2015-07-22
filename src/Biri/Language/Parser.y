@@ -62,10 +62,10 @@ import Biri.Language.Lexer
 %% 
 
 Program
-  : Resource Program     { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
-  | Data Program         { let Program rs ds fns = $2 in Program rs ($1:ds) fns }
-  | Computation Program  { let Program rs ds fns = $2 in Program rs ds ($1:fns) }
-  | eof                  { Program [] [] [] }
+  : Resource Program    { let Program rs ds fns = $2 in Program ($1:rs) ds fns }
+  | Data Program        { let Program rs ds fns = $2 in Program rs ($1:ds) fns }
+  | Computation Program { let Program rs ds fns = $2 in Program rs ds ($1:fns) }
+  | eof                 { Program [] [] [] }
 
 Resource
   : URI newline Handlers { Resource $1 $3 }
@@ -85,7 +85,7 @@ Handlers
   | Handler Handlers { $1:$2 }
 
 Handler
-  : Method indent Instructions dedent  { Handler $1 $3 }
+  : Method indent Instructions dedent { Handler $1 $3 }
 
 Method
   : delete { Delete }
@@ -129,7 +129,7 @@ DataConstructors
   | DataConstructor newline DataConstructors { $1 : $3 }
 
 DataConstructor
-  : constructor TypeList                 { ($1, $2) }
+  : constructor TypeList { ($1, $2) }
 
 TypeList
   : {- empty -}         { [] }
@@ -139,17 +139,17 @@ Expr
   : Abstraction { $1 }
 
 Abstraction
-  : '\\' Lambda                  { TypedExpr $2 Nothing }
-  | Case                         { $1 }
+  : '\\' Lambda { TypedExpr $2 Nothing }
+  | Case        { $1 }
 
 Lambda
   : ident '->' Expr { Lambda $1 $3 }
   | ident Lambda    { Lambda $1 (TypedExpr $2 Nothing) }
 
 Case
-  : case Expr of indent Cases dedent                  { TypedExpr (Case $2 $5) Nothing }
-  | case Expr of indent Cases dedent ':' Type         { TypedExpr (Case $2 $5) (Just $8) }
-  | Application                                       { $1 }
+  : case Expr of indent Cases dedent          { TypedExpr (Case $2 $5) Nothing }
+  | case Expr of indent Cases dedent ':' Type { TypedExpr (Case $2 $5) (Just $8) }
+  | Application                               { $1 }
 
 Cases
   : Pattern '->' Expr               { [($1, $3)] }
@@ -166,7 +166,7 @@ ConstructorPattern
 
 SubPatterns
   : SubPatterns SubPattern { $1 ++ [$2] }
-  | SubPattern { [$1] }
+  | SubPattern             { [$1] }
 
 SubPattern 
   : ident                      { VariablePattern $1 }
@@ -180,18 +180,18 @@ Application
   | Value ':' Type             { retype $1 $3 }
 
 Value
-  : Atomic                { TypedExpr $1 Nothing }
-  | '(' Expr ')'          { $2 }
+  : Atomic       { TypedExpr $1 Nothing }
+  | '(' Expr ')' { $2 }
 
 Atomic
-  : constructor                      { DataConstructor $1 }
-  | ident                            { Variable $1 }
-  | '$' int                          { Match $2 }
-  | '?' ident                        { Query $2 }
-  | '#' ident                        { Form $2 }
-  | string                           { Constant (LString $1) }
-  | int                              { Constant (LInt $1) }
-  | double                           { Constant (LDouble $1) }
+  : constructor { DataConstructor $1 }
+  | ident       { Variable $1 }
+  | '$' int     { Match $2 }
+  | '?' ident   { Query $2 }
+  | '#' ident   { Form $2 }
+  | string      { Constant (LString $1) }
+  | int         { Constant (LInt $1) }
+  | double      { Constant (LDouble $1) }
 
 Type
   : TypeApplication '->' Type { FunctionArrow $1 $3 }
